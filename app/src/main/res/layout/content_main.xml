@@ -8,7 +8,7 @@
     tools:context=".ItemListActivity"
     tools:showIn="@layout/activity_item_list">
 
-    <ListView
+    <GridView
         android:id="@+id/gridview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
