@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -24,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -52,9 +54,9 @@ public class ItemListActivity extends AppCompatActivity {
 
     //Variables
     String finalMadeURL = "";
-    Double oldPrice = 0.0;
-    String productId = "";
-    String companyName = "";
+    ArrayList<Double> oldPrice = new ArrayList<Double>();
+    ArrayList<String> productId = new ArrayList<String>();
+    ArrayList<String> companyName = new ArrayList<String>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,63 +79,83 @@ public class ItemListActivity extends AppCompatActivity {
             }
         });
 
-        fetchDetails();
-
         adapter = new CustomProductAdapter(this, R.layout.custom_single_product, productsArrayList);
         gridView.setAdapter(adapter);
 
+        fetchDetails();
 
+        callData();
     }
 
     public void fetchDetails(){
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-        StringRequest request =  new StringRequest(finalMadeURL, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-
-                try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    String imageURL = jsonObject.getString("thumbnailImage");
-                    Double newPrice = jsonObject.getDouble("salePrice");
-                    String title = jsonObject.getString("name");
-
-                    //Picasso.get().load(imageURL).into();
-
-                    //productsArrayList.add(new);
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(ItemListActivity.this, "Please enter the proper URL", Toast.LENGTH_SHORT).show();
-            }
-        });
 
         myDatabase.execSQL("CREATE TABLE IF NOT EXISTS myProducts (url VARCHAR, productId VARCHAR, companyName VARCHAR, price VARCHAR, date VARCHAR)");
         Cursor c = myDatabase.rawQuery("SELECT * FROM myProducts ",null);
         if(c.moveToFirst()) {
             do{
-                productId = c.getString(c.getColumnIndex("productId"));
-                companyName = c.getString(c.getColumnIndex("companyName"));
-                finalMadeURL = makeWalmartURL(productId);
-                oldPrice = Double.parseDouble(c.getString(c.getColumnIndex("price")));
-                queue.add(request);
+                productId.add( c.getString(c.getColumnIndex("productId")));
+                companyName.add(c.getString(c.getColumnIndex("companyName")));
+                oldPrice.add(Double.parseDouble(c.getString(c.getColumnIndex("price"))));
             }while(c.moveToNext());
         }
+    }
 
+    public void callData(){
+        RequestQueue queue = Volley.newRequestQueue(this);
+        for(int i = 0; i < productId.size(); i++){
+            finalMadeURL = makeWalmartURL(productId.get(i));
+            StringRequest request =  new StringRequest(Request.Method.GET,finalMadeURL, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+
+                    try {
+                        Log.i("info",response);
+                        JSONObject jsonObject = new JSONObject(response);
+                        String imageURL = jsonObject.getString("thumbnailImage");
+                        String itemId = ""+jsonObject.getInt("itemId");
+                        Double newPrice = jsonObject.getDouble("salePrice");
+                        String title = jsonObject.getString("name");
+                        Drawable myIcon = getResources().getDrawable(R.drawable.folder_default);
+                        Bitmap bitmap = ((BitmapDrawable) myIcon).getBitmap();
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                        byte[] data = baos.toByteArray();
+
+                        myDatabase.execSQL("CREATE TABLE IF NOT EXISTS myProducts (url VARCHAR, productId VARCHAR, companyName VARCHAR, price VARCHAR, date VARCHAR)");
+                        Cursor c = myDatabase.rawQuery("SELECT * FROM myProducts WHERE productId='"+itemId+"'",null);
+                        if(c.moveToFirst()) {
+                            do{
+                                Products p = new Products(itemId,data,Double.parseDouble(c.getString(c.getColumnIndex("price"))),
+                                        newPrice,title,c.getString(c.getColumnIndex("companyName")));
+                                productsArrayList.add(p);
+                            }while(c.moveToNext());
+                        }
+                        //Picasso.get().load(imageURL).into();
+
+                        adapter.notifyDataSetChanged();
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(ItemListActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+            queue.add(request);
+        }
     }
 
     public String makeWalmartURL(String id){
+
         String madeURL = "https://api.walmartlabs.com/v1/items/";
         madeURL += id + "?format=json&";
         madeURL += "apiKey=" + "3cedjptrk6df8zwubyuha6ya";
         Log.i("info", madeURL);
         return madeURL;
     }
+
 }

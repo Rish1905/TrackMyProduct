@@ -60,7 +60,7 @@ public class AddURLActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!validateURL()) return;
                 finalURL = urlText.getText().toString().trim();
-                if (company.equals("walmart")) InsertWalmartIntoDatabase();
+                InsertIntoDatabase();
             }
         });
 
@@ -78,7 +78,7 @@ public class AddURLActivity extends AppCompatActivity {
         urlText = (EditText) findViewById(R.id.url);
         addURL = (Button) findViewById(R.id.button);
         walmart = (Button) findViewById(R.id.walmart);
-        urlText.setText("https://www.walmart.com/ip/Char-Broil-3-or-4-Burner-All-Season-Grill-Cover/49316795");
+        urlText.setText("https://www.walmart.com/ip/Oral-B-Genius-8000-25-Rebate-Available-Electronic-Rechargeable-Toothbrush-3-CrossAction-Brush-Heads-Bluetooth-Connectivity-Travel-Case-Powered-Braun/54901055?athcpid=54901055&athpgid=athenaItemPage&athcgid=null&athznid=collection&athieid=v0&athstid=CS020&athguid=466001f5-fc454e27-ed32d159ee22a61&athena=true");
         myDatabase = this.openOrCreateDatabase("TrackMyProducts", MODE_PRIVATE, null);
     }
 
@@ -96,8 +96,15 @@ public class AddURLActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(this, "Enter the particular product link", Toast.LENGTH_SHORT).show();
                 }
+            }else if(url.contains("www.ebay.com")){
+                if(url.contains("/itm/")){
+                    company = "ebay";
+                    return true;
+                } else{
+                    Toast.makeText(this, "Enter the particular product link", Toast.LENGTH_SHORT).show();
+                }
             } else {
-                Toast.makeText(this, "Enter the valid Company website", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Enter either Walmart or Ebay website URL", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(this, "Enter the valid URL", Toast.LENGTH_SHORT).show();
@@ -105,25 +112,49 @@ public class AddURLActivity extends AppCompatActivity {
         return false;
     }
 
-    public void InsertWalmartIntoDatabase() {
+    public void InsertIntoDatabase() {
 
         String modifiedURL = finalURL;
         modifiedURL = modifiedURL.replace("https://", "");
         modifiedURL = modifiedURL.replace("http://", "");
-        modifiedURL = modifiedURL.replace("www.walmart.com/ip/", "");
-        String[] temp = modifiedURL.split("/");
-        char[] temp1 = temp[1].toCharArray();
-        for (int i = 0; i < temp1.length; i++) {
-            if (temp1[i] < 48 || temp1[i] > 58) break;
-            productID += temp1[i];
+
+        if(company.equals("walmart")) {
+            modifiedURL = modifiedURL.replace("www.walmart.com/ip/", "");
+            String[] temp = modifiedURL.split("/");
+            char[] temp1 = temp[1].toCharArray();
+            for (int i = 0; i < temp1.length; i++) {
+                if (temp1[i] < 48 || temp1[i] > 58) break;
+                productID += temp1[i];
+            }
+        }
+        else if(company.equals("ebay")){
+            modifiedURL = modifiedURL.replace("www.ebay.com/itm/", "");
+            String[] temp = modifiedURL.split("/");
+            char[] temp1 = temp[1].toCharArray();
+            for (int i = 0; i < temp1.length; i++) {
+                if (temp1[i] < 48 || temp1[i] > 58) break;
+                productID += temp1[i];
+            }
         }
 
         if (!CheckDuplicate(productID)) return;
 
-        String madeURL = "https://api.walmartlabs.com/v1/items/";
-        madeURL += productID + "?format=json&";
-        madeURL += "apiKey=" + "3cedjptrk6df8zwubyuha6ya";
-        Log.i("info", madeURL);
+        String madeURL = "";
+
+        if(company.equals("walmart")) {
+            madeURL = "https://api.walmartlabs.com/v1/items/";
+            madeURL += productID + "?format=json&";
+            madeURL += "apiKey=" + "3cedjptrk6df8zwubyuha6ya";
+        }
+        else if(company.equals("ebay")){
+            madeURL = "http://open.api.ebay.com/shopping?";
+            madeURL += "callname=GetSingleItem&";
+            madeURL += "responseencoding=JSON&";
+            madeURL += "appid=" + "RishabhA-TrackMyP-PRD-fdb3ea0bf-a69b7399&";
+            madeURL += "siteid=0&";
+            madeURL += "version=967&";
+            madeURL += "ItemID=" + productID ;
+        }
 
         StringRequest request =  new StringRequest(madeURL, new Response.Listener<String>() {
             @Override
@@ -143,7 +174,10 @@ public class AddURLActivity extends AppCompatActivity {
             statement.bindString(1,finalURL);
             statement.bindString(2,productID);
             statement.bindString(3,company);
-            statement.bindString(4,""+jsonObject.getDouble("salePrice"));
+            if(company.equals("walmart"))
+                statement.bindString(4,""+jsonObject.getDouble("salePrice"));
+            else if(company.equals("ebay"))
+                statement.bindString(4,""+jsonObject.getJSONObject("Item").getJSONObject("ConvertedCurrentPrice").getDouble("Value"));
             statement.bindString(5,dateAndTime);
             statement.executeInsert();
 
