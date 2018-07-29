@@ -68,7 +68,7 @@ public class AddURLActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(AddURLActivity.this, WebViewActivity.class);
-                intent.putExtra("url", "http://www.walmart.com");
+                intent.putExtra("url", "https://www.walmart.com");
                 startActivity(intent);
             }
         });
@@ -78,7 +78,7 @@ public class AddURLActivity extends AppCompatActivity {
         urlText = (EditText) findViewById(R.id.url);
         addURL = (Button) findViewById(R.id.button);
         walmart = (Button) findViewById(R.id.walmart);
-        urlText.setText("https://www.walmart.com/ip/Oral-B-Genius-8000-25-Rebate-Available-Electronic-Rechargeable-Toothbrush-3-CrossAction-Brush-Heads-Bluetooth-Connectivity-Travel-Case-Powered-Braun/54901055?athcpid=54901055&athpgid=athenaItemPage&athcgid=null&athznid=collection&athieid=v0&athstid=CS020&athguid=466001f5-fc454e27-ed32d159ee22a61&athena=true");
+        urlText.setText("https://www.ebay.com/itm/Apple-iPod-touch-2nd-Generation-Black-8-GB-Good-Condition/332676295558?hash=item4d750d6b86:g:3oEAAOSwC19bFtRB");
         myDatabase = this.openOrCreateDatabase("TrackMyProducts", MODE_PRIVATE, null);
     }
 

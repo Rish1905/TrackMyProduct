@@ -12,6 +12,8 @@ import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 import java.util.ArrayList;
 
 public class CustomProductAdapter extends BaseAdapter implements Filterable {
@@ -75,8 +77,7 @@ public class CustomProductAdapter extends BaseAdapter implements Filterable {
 
         holder.title.setText(f.getTitle());
 
-        Bitmap bmp = BitmapFactory.decodeByteArray(f.getImage(), 0, f.getImage().length);
-        holder.imageView.setImageBitmap(Bitmap.createScaledBitmap(bmp, 200,200, false));
+        Picasso.get().load(f.getImage()).into(holder.imageView);
 
         holder.oldPrice.setText("Old: $"+f.getOldPrice().toString());
         holder.newPrice.setText("New: $"+f.getNewPrice().toString());

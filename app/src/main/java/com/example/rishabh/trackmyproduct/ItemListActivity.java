@@ -103,33 +103,54 @@ public class ItemListActivity extends AppCompatActivity {
     public void callData(){
         RequestQueue queue = Volley.newRequestQueue(this);
         for(int i = 0; i < productId.size(); i++){
-            finalMadeURL = makeWalmartURL(productId.get(i));
+            if(companyName.get(i).equals("walmart"))
+                finalMadeURL = makeWalmartURL(productId.get(i));
+            else
+                finalMadeURL = makeEbayURL(productId.get(i));
             StringRequest request =  new StringRequest(Request.Method.GET,finalMadeURL, new Response.Listener<String>() {
                 @Override
                 public void onResponse(String response) {
 
                     try {
-                        Log.i("info",response);
                         JSONObject jsonObject = new JSONObject(response);
-                        String imageURL = jsonObject.getString("thumbnailImage");
-                        String itemId = ""+jsonObject.getInt("itemId");
-                        Double newPrice = jsonObject.getDouble("salePrice");
-                        String title = jsonObject.getString("name");
-                        Drawable myIcon = getResources().getDrawable(R.drawable.folder_default);
-                        Bitmap bitmap = ((BitmapDrawable) myIcon).getBitmap();
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                        byte[] data = baos.toByteArray();
+
+                        String company = "";
+                        Double old = 0.0;
+                        String itemId = "";
+
+                        try{
+                            itemId = ""+jsonObject.getInt("itemId");
+                        }
+                        catch (Exception e){
+                            itemId = ""+jsonObject.getJSONObject("Item").getString("ItemID");
+                        }
 
                         myDatabase.execSQL("CREATE TABLE IF NOT EXISTS myProducts (url VARCHAR, productId VARCHAR, companyName VARCHAR, price VARCHAR, date VARCHAR)");
                         Cursor c = myDatabase.rawQuery("SELECT * FROM myProducts WHERE productId='"+itemId+"'",null);
                         if(c.moveToFirst()) {
                             do{
-                                Products p = new Products(itemId,data,Double.parseDouble(c.getString(c.getColumnIndex("price"))),
-                                        newPrice,title,c.getString(c.getColumnIndex("companyName")));
-                                productsArrayList.add(p);
+                                company = c.getString(c.getColumnIndex("companyName"));
+                                old = Double.parseDouble(c.getString(c.getColumnIndex("price")));
                             }while(c.moveToNext());
                         }
+
+                        Double newPrice;
+                        String title = "";
+                        String data = "";
+
+                        if(company.equals("walmart")){
+                            newPrice = jsonObject.getDouble("salePrice");
+                            title = jsonObject.getString("name");
+                            data = jsonObject.getString("thumbnailImage");
+                                                    }
+                        else{
+                            newPrice = jsonObject.getJSONObject("Item").getJSONObject("ConvertedCurrentPrice").getDouble("Value");
+                            title = jsonObject.getJSONObject("Item").getString("Title");
+                            data = jsonObject.getJSONObject("Item").getString("GalleryURL");
+                        }
+
+                        Products p = new Products(itemId,data,old,newPrice,title,company);
+                        productsArrayList.add(p);
                         //Picasso.get().load(imageURL).into();
 
                         adapter.notifyDataSetChanged();
@@ -155,6 +176,18 @@ public class ItemListActivity extends AppCompatActivity {
         madeURL += id + "?format=json&";
         madeURL += "apiKey=" + "3cedjptrk6df8zwubyuha6ya";
         Log.i("info", madeURL);
+        return madeURL;
+    }
+
+    public String makeEbayURL(String id){
+        String madeURL = "http://open.api.ebay.com/shopping?";
+        madeURL += "callname=GetSingleItem&";
+        madeURL += "responseencoding=JSON&";
+        madeURL += "appid=" + "RishabhA-TrackMyP-PRD-fdb3ea0bf-a69b7399&";
+        madeURL += "siteid=0&";
+        madeURL += "version=967&";
+        madeURL += "ItemID=" + id ;
+
         return madeURL;
     }
 

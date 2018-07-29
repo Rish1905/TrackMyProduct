@@ -2,7 +2,7 @@ package com.example.rishabh.trackmyproduct;
 
 public class Products {
 
-    public Products(String productId, byte[] image, Double oldPrice, Double newPrice, String title, String companyName) {
+    public Products(String productId, String image, Double oldPrice, Double newPrice, String title, String companyName) {
         this.productId = productId;
         this.image = image;
         this.oldPrice = oldPrice;
@@ -19,12 +19,8 @@ public class Products {
         this.productId = productId;
     }
 
-    public byte[] getImage() {
+    public String getImage() {
         return image;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
     }
 
     public Double getOldPrice() {
@@ -60,7 +56,7 @@ public class Products {
     }
 
     String productId;
-    byte[] image;
+    String image;
     Double oldPrice;
     Double newPrice;
     String title;
