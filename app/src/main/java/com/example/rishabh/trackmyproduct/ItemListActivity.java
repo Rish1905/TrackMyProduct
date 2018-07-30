@@ -1,28 +1,19 @@
 package com.example.rishabh.trackmyproduct;
 
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.database.sqlite.SQLiteDatabase;;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.util.Log;
-import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -31,19 +22,13 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.rishabh.trackmyproduct.dummy.DummyContent;
-import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
-public class ItemListActivity extends AppCompatActivity {
+public class ItemListActivity extends AppCompatActivity implements android.support.v7.widget.SearchView.OnQueryTextListener {
 
     //List of Folders
     ArrayList<Products> productsArrayList;
@@ -59,6 +44,9 @@ public class ItemListActivity extends AppCompatActivity {
     ArrayList<String> companyName = new ArrayList<String>();
 
     boolean isCreate = true;
+
+    //Progress Bar
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,9 +72,51 @@ public class ItemListActivity extends AppCompatActivity {
         adapter = new CustomProductAdapter(this, R.layout.custom_single_product, productsArrayList);
         gridView.setAdapter(adapter);
 
+        progressDialog = new ProgressDialog(ItemListActivity.this);
+        progressDialog.setTitle("Data Fetch");
+        progressDialog.setMessage("Data fetching is in progress please wait...");
+        progressDialog.setCancelable(false);
         fetchDetails();
-
         callData();
+
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(ItemListActivity.this,itemDetailsActivity.class);
+                intent.putExtra("productId",productsArrayList.get(position).getProductId());
+                intent.putExtra("companyName",productsArrayList.get(position).getCompanyName());
+                intent.putExtra("oldPrice",productsArrayList.get(position).getOldPrice());
+                startActivity(intent);
+            }
+        });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch(item.getItemId()){
+            case R.id.tick:
+                progressDialog.show();
+                productsArrayList.clear();
+                productId.clear();
+                companyName.clear();
+                oldPrice.clear();
+                fetchDetails();
+                callData();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.refresh_search_menu, menu);
+        MenuItem menuItem = menu.findItem(R.id.search);
+        android.support.v7.widget.SearchView searchView = (android.support.v7.widget.SearchView) menuItem.getActionView();
+        searchView.setOnQueryTextListener(this);
+        return true;
+
     }
 
     public void fetchDetails(){
@@ -105,6 +135,7 @@ public class ItemListActivity extends AppCompatActivity {
     public void callData(){
         RequestQueue queue = Volley.newRequestQueue(this);
         for(int i = 0; i < productId.size(); i++){
+            progressDialog.show();
             if(companyName.get(i).equals("walmart"))
                 finalMadeURL = makeWalmartURL(productId.get(i));
             else
@@ -156,6 +187,7 @@ public class ItemListActivity extends AppCompatActivity {
                         //Picasso.get().load(imageURL).into();
 
                         adapter.notifyDataSetChanged();
+                        progressDialog.dismiss();
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -203,6 +235,7 @@ public class ItemListActivity extends AppCompatActivity {
             count = c.getCount();
 
             if (count != productsArrayList.size()) {
+                progressDialog.show();
                 productsArrayList.clear();
                 productId.clear();
                 companyName.clear();
@@ -213,5 +246,16 @@ public class ItemListActivity extends AppCompatActivity {
         }
         else
             isCreate = false;
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        adapter.getFilter().filter(newText);
+        return false;
     }
 }
