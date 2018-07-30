@@ -31,7 +31,6 @@
                 android:value="com.example.rishabh.trackmyproduct.ItemListActivity" />
         </activity>
         <activity android:name=".AddURLActivity" />
-        <activity android:name=".WebViewActivity"></activity>
     </application>
 
 </manifest>

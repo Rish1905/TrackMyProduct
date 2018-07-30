@@ -58,6 +58,8 @@ public class ItemListActivity extends AppCompatActivity {
     ArrayList<String> productId = new ArrayList<String>();
     ArrayList<String> companyName = new ArrayList<String>();
 
+    boolean isCreate = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -191,4 +193,25 @@ public class ItemListActivity extends AppCompatActivity {
         return madeURL;
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(!isCreate) {
+            int count = 0;
+            myDatabase.execSQL("CREATE TABLE IF NOT EXISTS myProducts (url VARCHAR, productId VARCHAR, companyName VARCHAR, price VARCHAR, date VARCHAR)");
+            Cursor c = myDatabase.rawQuery("SELECT * FROM myProducts ", null);
+            count = c.getCount();
+
+            if (count != productsArrayList.size()) {
+                productsArrayList.clear();
+                productId.clear();
+                companyName.clear();
+                oldPrice.clear();
+                fetchDetails();
+                callData();
+            }
+        }
+        else
+            isCreate = false;
+    }
 }

@@ -9,7 +9,12 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -36,8 +41,9 @@ import java.util.Date;
 public class AddURLActivity extends AppCompatActivity {
 
     EditText urlText;
-    Button addURL;
     Button walmart;
+    Button ebay;
+    WebView webView;
 
     //Company Name
     String company = "";
@@ -55,31 +61,57 @@ public class AddURLActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_url);
 
         init();
-        addURL.setOnClickListener(new View.OnClickListener() {
+
+        if(getSupportActionBar()!=null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
+        webView.setWebViewClient(new WebViewClient(){
+
             @Override
-            public void onClick(View v) {
-                if (!validateURL()) return;
-                finalURL = urlText.getText().toString().trim();
-                InsertIntoDatabase();
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                urlText.setText(url);
+                super.onPageStarted(view, url, favicon);
             }
         });
+        webView.loadUrl("https://www.google.com");
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+
 
         walmart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AddURLActivity.this, WebViewActivity.class);
-                intent.putExtra("url", "https://www.walmart.com");
-                startActivity(intent);
+                webView.loadUrl("https://www.walmart.com");
+            }
+        });
+
+        ebay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                webView.loadUrl("https://www.ebay.com");
             }
         });
     }
 
     public void init() {
         urlText = (EditText) findViewById(R.id.url);
-        addURL = (Button) findViewById(R.id.button);
         walmart = (Button) findViewById(R.id.walmart);
-        urlText.setText("https://www.ebay.com/itm/Apple-iPod-touch-2nd-Generation-Black-8-GB-Good-Condition/332676295558?hash=item4d750d6b86:g:3oEAAOSwC19bFtRB");
+        ebay = (Button) findViewById(R.id.ebay);
+
+        webView = (WebView) findViewById(R.id.webview);
+
         myDatabase = this.openOrCreateDatabase("TrackMyProducts", MODE_PRIVATE, null);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(webView.canGoBack()){
+            webView.goBack();
+        }
+        else
+            super.onBackPressed();
     }
 
     public boolean validateURL() {
@@ -96,7 +128,7 @@ public class AddURLActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(this, "Enter the particular product link", Toast.LENGTH_SHORT).show();
                 }
-            }else if(url.contains("www.ebay.com")){
+            }else if(url.contains("www.ebay.com") || url.contains("m.ebay.com")){
                 if(url.contains("/itm/")){
                     company = "ebay";
                     return true;
@@ -111,6 +143,31 @@ public class AddURLActivity extends AppCompatActivity {
         }
         return false;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch(item.getItemId()){
+            case android.R.id.home:
+                finish();
+                break;
+            case R.id.tick:
+                if (!validateURL()) break;
+                finalURL = urlText.getText().toString().trim();
+                InsertIntoDatabase();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.tick_menu, menu);
+        return true;
+
+    }
+
 
     public void InsertIntoDatabase() {
 
@@ -129,6 +186,7 @@ public class AddURLActivity extends AppCompatActivity {
         }
         else if(company.equals("ebay")){
             modifiedURL = modifiedURL.replace("www.ebay.com/itm/", "");
+            modifiedURL = modifiedURL.replace("m.ebay.com/itm/","");
             String[] temp = modifiedURL.split("/");
             char[] temp1 = temp[1].toCharArray();
             for (int i = 0; i < temp1.length; i++) {
