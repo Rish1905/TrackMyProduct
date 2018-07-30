@@ -1,4 +1,4 @@
-package com.example.rishabh.trackmyproduct;
+package com.developer.rishabh.trackmyproduct;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -72,10 +72,6 @@ public class ItemListActivity extends AppCompatActivity implements android.suppo
         adapter = new CustomProductAdapter(this, R.layout.custom_single_product, productsArrayList);
         gridView.setAdapter(adapter);
 
-        progressDialog = new ProgressDialog(ItemListActivity.this);
-        progressDialog.setTitle("Data Fetch");
-        progressDialog.setMessage("Data fetching is in progress please wait...");
-        progressDialog.setCancelable(false);
         fetchDetails();
         callData();
 
@@ -96,7 +92,7 @@ public class ItemListActivity extends AppCompatActivity implements android.suppo
 
         switch(item.getItemId()){
             case R.id.tick:
-                progressDialog.show();
+                //progressDialog.show();
                 productsArrayList.clear();
                 productId.clear();
                 companyName.clear();
@@ -135,7 +131,7 @@ public class ItemListActivity extends AppCompatActivity implements android.suppo
     public void callData(){
         RequestQueue queue = Volley.newRequestQueue(this);
         for(int i = 0; i < productId.size(); i++){
-            progressDialog.show();
+            //progressDialog.show();
             if(companyName.get(i).equals("walmart"))
                 finalMadeURL = makeWalmartURL(productId.get(i));
             else
@@ -187,7 +183,7 @@ public class ItemListActivity extends AppCompatActivity implements android.suppo
                         //Picasso.get().load(imageURL).into();
 
                         adapter.notifyDataSetChanged();
-                        progressDialog.dismiss();
+                        //progressDialog.dismiss();
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -235,7 +231,7 @@ public class ItemListActivity extends AppCompatActivity implements android.suppo
             count = c.getCount();
 
             if (count != productsArrayList.size()) {
-                progressDialog.show();
+                //progressDialog.show();
                 productsArrayList.clear();
                 productId.clear();
                 companyName.clear();

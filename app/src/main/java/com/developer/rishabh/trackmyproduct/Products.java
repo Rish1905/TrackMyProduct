@@ -1,4 +1,4 @@
-package com.example.rishabh.trackmyproduct;
+package com.developer.rishabh.trackmyproduct;
 
 public class Products {
 
